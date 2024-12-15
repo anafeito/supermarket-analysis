@@ -71,7 +71,7 @@ superstore_data <- na.omit(superstore_data)
 Abstract (superstore_data)
 
 
-S#Identificar datos atípicos de cada variable
+#Identificar datos atípicos de cada variable
 Outlier(superstore_data$Año_Nacimiento, method = "boxplot") #extraemos los valores atípicos
 boxplot(superstore_data$Año_Nacimiento, main="Año de Nacimiento") #gráfico de bigotes
 
@@ -633,7 +633,7 @@ ggplot(superstore_data, aes(x = Visitas_Web_Mensuales, y = Ingreso)) +
   )
 
 divisiones <- superstore_data #vamos a crear un dataframe en el que dividir las visitas por grupos
-divisiones$Visitas_Web <- cut(df$Visitas_Web_Mensuales, breaks = 3)  # Crear grupos de visitas web
+divisiones$Visitas_Web <- cut(divisiones$Visitas_Web_Mensuales, breaks = 3)  # Crear grupos de visitas web
 
 ggplot(divisiones, aes(x = Visitas_Web, y = Ingreso)) +
   geom_boxplot(aes(fill = Visitas_Web)) +
@@ -752,6 +752,257 @@ media_gasto_dulces <- aggregate(Gasto_Dulces ~ Tiene_Hijos, data = superstore_da
 print(media_gasto_dulces)
 
 
+
+#FASE 2
+
+#creacion y analisis de la nueva variable
+
+superstore_data_lm <- superstore_data
+superstore_data_lm <- superstore_data_lm %>%
+  mutate(Respuesta = recode(Respuesta, "No" = "0", "Sí" = "1"))
+
+superstore_data_lm <- superstore_data_lm %>%
+  mutate(Queja = recode(Queja, "No" = "0", "Sí" = "1"))
+
+superstore_data_lm <- superstore_data_lm %>%
+  select(-Tiene_Hijos)
+
+superstore_data_lm <- superstore_data_lm %>%
+  select(-Id)
+
+superstore_data_lm$Total_Gastos <- rowSums(superstore_data_numerico[, c("Gasto_Vinos", "Gasto_Frutas", "Gasto_Carnes", "Gasto_Pescado", "Gasto_Dulces", "Gasto_ProductosOro")])
+
+summary(superstore_data_lm$Total_Gastos)
+hist(superstore_data_lm$Total_Gastos, main="Gastos totales", ylab="Frecuencia", xlab="Total_Gastos", breaks=20)
+
+
+library(psych)
+pairs.panels(superstore_data_lm,gap=0)
+
+#crear modelos
+
+
+#Caso 1
+# Crear el modelo de regresión múltiple - total gastos
+modelo <- lm(Total_Gastos ~  Hijos_Niños +Compras_Web +Compras_Catalogo+Gasto_Carnes+Gasto_Pescado+Gasto_Dulces+Gasto_Vinos+Gasto_Frutas, data = superstore_data_lm)
+
+summary(modelo)
+
+plot(modelo$fitted.values, superstore_data_lm$Total_Gastos,
+     main = "Valores Reales vs Predichos",
+     xlab = "Valores Predichos",
+     ylab = "Valores Reales",
+     pch = 19, col = "blue")
+abline(a = 0, b = 1, col = "red", lwd = 2)  # Línea de referencia ideal
+
+
+#Definimos los coeficientes
+
+bo = 10.252512
+b1 = -6.701912
+b2 = 4.575039 
+b3= 3.335032  
+b4=	0.983120 
+b5= 1.155259
+b6= 1.051046
+b7= 1.002738
+b8=1.144613
+
+niños = 1
+web = 5
+catalogo= 6
+carne= 180
+pescado=10
+vinos=200
+dulces= 15
+frutas=50
+
+#Predicción
+
+caso_1 =paste("El gasto total en este caso es:",round( bo + (b1*niños) + (b2*web)+(b3*catalogo)+(b4*carne)+(b5*pescado)+(b6*vinos)+(b7*dulces)+(b8*frutas),2))
+caso_1
+
+#Caso 2
+# Crear el modelo de regresión múltiple - compras catalogo
+
+modelo2 <- lm(Compras_Catalogo ~  Hijos_Niños  +Compras_Descuento+Visitas_Web_Mensuales+Gasto_Pescado+Gasto_Carnes+Gasto_Dulces+Gasto_Vinos, data = superstore_data_lm)
+
+summary(modelo2)
+
+plot(modelo2$fitted.values, superstore_data_lm$Compras_Catalogo,
+     main = "Valores Reales vs Predichos",
+     xlab = "Valores Predichos",
+     ylab = "Valores Reales",
+     pch = 19, col = "blue")
+abline(a = 0, b = 1, col = "red", lwd = 2)  # Línea de referencia ideal
+
+
+
+#Definamos los coeficientes
+
+bo = 1.780780
+b1 = -0.605628
+b2 = 0.208048 
+b3= -0.206218  
+b4=	0.004624
+b5= 0.004986
+b6= 0.002996
+b7= 0.002220
+
+niños = 1
+descuento = 1
+visitasweb = 5
+pescado=10
+carne= 180
+vinos=200
+dulces= 15
+
+#Predicción
+
+caso_2 =paste("El número de compras mediante el catálogo en este caso es:",round( bo + (b1*niños) + (b2*descuento)+(b3*visitasweb)+(b4*pescado)+(b5*carne)+(b6*vinos)+(b7*dulces),2))
+caso_2
+
+
+
+
+# Definamos las variables# Definamos las variablesGasto_Carnes
+bo = -429.3
+b1 = 0.011
+b2 = -98.91
+b3= -171.1
+b4=	20.43
+b5= 24.45
+b6=35.67
+b7=71.3
+
+#caso 1
+
+ingreso = 60000
+niños = 0
+adolescentes = 1
+visitas = 9
+web = 5
+tienda = 7
+catalogo= 6
+
+summary(superstore_data_lm$Compras_Catalogo)
+
+nuevo_tree_caso_1 =paste("El gasto web del caso 1 es de:",round( bo + (b1*ingreso) + (b2*niños)+(b3*adolescentes)+(b4*visitas)+(b5*web)+(b6*tienda)+(b7*catalogo),2))
+nuevo_tree_caso_1
+
+
+
+
+modelo = lm (Visitas_Web_Mensuales ~ Ingreso + Gasto_Carnes+Gasto_Vinos , data = superstore_data)
+modelo
+summary(modelo) #si el modelo tiene variables q no son relevantes, los resultados van a tener consecuencias y hay q eliminarlas
+
+
+
+
+
+
+
+#ANALISIS COMPONENTES PRINCIPALES
+library(factoextra)
+
+superstore_data_acp <- superstore_data
+
+superstore_data_acp <- superstore_data_acp %>%
+  mutate(Respuesta = recode(Respuesta, "No" = 0, "Sí" = 1))
+
+superstore_data_acp <- superstore_data_acp %>%
+  mutate(Queja = recode(Queja, "No" = 0, "Sí" = 1))
+
+
+superstore_data_numerico <- superstore_data_acp %>%
+  select_if(is.numeric)
+
+datosacp <- superstore_data_numerico %>%
+  select(-Id)
+
+datosacp <- scale(datosacp)
+datosacp <- as.data.frame(datosacp)
+
+
+ACP1<- prcomp(datosacp)
+ACP1
+summary(ACP1)
+
+fviz_eig(ACP1, addlabels = TRUE, ylim = c(0, 50), ncp = 16, xlab="Dimensiones", ylab="Porcentaje de variaciones explicadas")
+
+
+fviz_pca_var(ACP1, 
+             col.var = "contrib",     # Usar la contribución como color
+             gradient.cols = c("red", "yellow", "green"), 
+             repel = TRUE,            # Evitar que las etiquetas se sobrepongan
+             labelsize = 5,           # Tamaño del texto de las etiquetas
+             title = "Gráfico de las Variables del PCA (1 y 2)",  # Añadir título
+             alpha.var = 0.7 ,         # Ajustar transparencia de las flechas
+             xlab="PC1(34,9%)",
+             ylab="PC2(10,9%)"
+)
+
+fviz_pca_var(ACP1, 
+             axes = c(1, 3),    
+             col.var = "contrib",     # Usar la contribución como color
+             gradient.cols = c("red", "yellow", "green"), 
+             repel = TRUE,            # Evitar que las etiquetas se sobrepongan
+             labelsize = 5,           # Tamaño del texto de las etiquetas
+             title = "Gráfico de las Variables del PCA (1 y 3)",  # Añadir título
+             alpha.var = 0.7 ,         # Ajustar transparencia de las flechas
+             xlab="PC1(34,9%)",
+             ylab="PC3(7,5%)"
+)
+
+
+fviz_pca_var(ACP1, 
+             axes = c(1, 4),    
+             col.var = "contrib",     # Usar la contribución como color
+             gradient.cols = c("red", "yellow", "green"), 
+             repel = TRUE,            # Evitar que las etiquetas se sobrepongan
+             labelsize = 5,           # Tamaño del texto de las etiquetas
+             title = "Gráfico de las Variables del PCA (1 y 4)",  # Añadir título
+             alpha.var = 0.7 ,         # Ajustar transparencia de las flechas
+             xlab="PC1(34,9%)",
+             ylab="PC4(6,3%)"
+)
+
+fviz_pca_var(ACP1, 
+             axes = c(1, 5),    
+             col.var = "contrib",     # Usar la contribución como color
+             gradient.cols = c("red", "yellow", "green"), 
+             repel = TRUE,            # Evitar que las etiquetas se sobrepongan
+             labelsize = 5,           # Tamaño del texto de las etiquetas
+             title = "Gráfico de las Variables del PCA (1 y 5)",  # Añadir título
+             alpha.var = 0.7 ,         # Ajustar transparencia de las flechas
+             xlab="PC1(34,9%)",
+             ylab="PC5(5,6%)"
+)
+
+fviz_pca_var(ACP1, 
+             axes = c(1, 6),    
+             col.var = "contrib",     # Usar la contribución como color
+             gradient.cols = c("red", "yellow", "green"), 
+             repel = TRUE,            # Evitar que las etiquetas se sobrepongan
+             labelsize = 5,           # Tamaño del texto de las etiquetas
+             title = "Gráfico de las Variables del PCA (1 y 6)",  # Añadir título
+             alpha.var = 0.7 ,         # Ajustar transparencia de las flechas
+             xlab="PC1(34,9%)",
+             ylab="PC6(4,9%)"
+)
+
+fviz_pca_var(ACP1, 
+             axes = c(1, 7),    
+             col.var = "contrib",     # Usar la contribución como color
+             gradient.cols = c("red", "yellow", "green"), 
+             repel = TRUE,            # Evitar que las etiquetas se sobrepongan
+             labelsize = 5,           # Tamaño del texto de las etiquetas
+             title = "Gráfico de las Variables del PCA (1 y 7)",  # Añadir título
+             alpha.var = 0.7 ,         # Ajustar transparencia de las flechas
+             xlab="PC1(34,9%)",
+             ylab="PC7(4,3%)"
+)
 
 
 
